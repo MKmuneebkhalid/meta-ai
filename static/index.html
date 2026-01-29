@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta AI Analyst</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: #8892b0;
+            font-size: 0.95rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .metric-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #64ffda;
+        }
+
+        .metric-card .label {
+            font-size: 0.8rem;
+            color: #8892b0;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-container {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message.user .bubble {
+            background: #0066ff;
+            color: white;
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 18px 18px 4px 18px;
+            max-width: 80%;
+            text-align: left;
+        }
+
+        .message.assistant .bubble {
+            background: rgba(255,255,255,0.08);
+            color: #e6e6e6;
+            padding: 16px 20px;
+            border-radius: 4px 18px 18px 18px;
+            max-width: 90%;
+            line-height: 1.6;
+        }
+
+        .message.assistant .bubble p {
+            margin-bottom: 12px;
+        }
+
+        .message.assistant .bubble p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message.assistant .bubble strong {
+            color: #64ffda;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 12px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: #0066ff;
+        }
+
+        .chat-input::placeholder {
+            color: #6b7280;
+        }
+
+        .send-btn {
+            background: #0066ff;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .send-btn:hover {
+            background: #0052cc;
+        }
+
+        .send-btn:active {
+            transform: scale(0.98);
+        }
+
+        .send-btn:disabled {
+            background: #4a5568;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: flex;
+            gap: 6px;
+            padding: 12px 18px;
+        }
+
+        .loading span {
+            width: 8px;
+            height: 8px;
+            background: #64ffda;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading span:nth-child(1) { animation-delay: -0.32s; }
+        .loading span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .diagnostics {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255,165,0,0.1);
+            border: 1px solid rgba(255,165,0,0.3);
+            border-radius: 12px;
+        }
+
+        .diagnostics h3 {
+            color: #ffa500;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .diagnostics p {
+            color: #ccc;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .quick-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .quick-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #8892b0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-color: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Meta AI Analyst</h1>
+            <p>Read-only analytics for JL Closets Ad Account</p>
+        </header>
+
+        <div class="metrics-grid" id="metrics">
+            <div class="metric-card">
+                <div class="value" id="spend">--</div>
+                <div class="label">Spend</div>
+            </div>
+            <div class="metric-card">
+                <div class="value" id="impressions">--</div>
+                <div class="label">Impressions</div>
+            </div>
+            <div class="metric-card">
+                <div class="value" id="clicks">--</div>
+                <div class="label">Clicks</div>
+            </div>
+            <div class="metric-card">
+                <div class="value" id="reach">--</div>
+                <div class="label">Reach</div>
+            </div>
+            <div class="metric-card">
+                <div class="value" id="ctr">--</div>
+                <div class="label">CTR</div>
+            </div>
+            <div class="metric-card">
+                <div class="value" id="cpc">--</div>
+                <div class="label">CPC</div>
+            </div>
+        </div>
+
+        <div class="quick-questions">
+            <button class="quick-btn" onclick="askQuestion('How is the ad account performing today?')">Daily Overview</button>
+            <button class="quick-btn" onclick="askQuestion('Is there any ad fatigue?')">Check Fatigue</button>
+            <button class="quick-btn" onclick="askQuestion('Why is my CPM high?')">CPM Analysis</button>
+            <button class="quick-btn" onclick="askQuestion('What should I focus on improving?')">Recommendations</button>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+                <div class="message assistant">
+                    <div class="bubble">
+                        <p>Hi! I'm your Meta AI Analyst. I have read-only access to your ad account data.</p>
+                        <p>Ask me anything about your ad performance, and I'll give you evidence-based insights.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="chat-input" placeholder="Ask about your ad performance..." onkeypress="handleKeyPress(event)">
+                <button class="send-btn" id="send-btn" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+
+        async function loadMetrics() {
+            try {
+                const response = await fetch(`${API_BASE}/snapshots?limit=1`);
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    const snapshot = data[0];
+                    document.getElementById('spend').textContent = '$' + snapshot.spend.toFixed(2);
+                    document.getElementById('impressions').textContent = formatNumber(snapshot.impressions);
+                    document.getElementById('clicks').textContent = formatNumber(snapshot.clicks);
+                    document.getElementById('reach').textContent = formatNumber(snapshot.reach);
+                    document.getElementById('ctr').textContent = snapshot.ctr.toFixed(2) + '%';
+                    document.getElementById('cpc').textContent = '$' + snapshot.cpc.toFixed(2);
+                }
+            } catch (error) {
+                console.error('Error loading metrics:', error);
+            }
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        function addMessage(text, isUser) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'bubble';
+            
+            if (isUser) {
+                bubbleDiv.textContent = text;
+            } else {
+                // Convert markdown-like formatting to HTML
+                const formatted = text
+                    .split('\n\n')
+                    .map(p => `<p>${p.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`)
+                    .join('');
+                bubbleDiv.innerHTML = formatted;
+            }
+            
+            messageDiv.appendChild(bubbleDiv);
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addLoading() {
+            const messagesContainer = document.getElementById('chat-messages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant';
+            loadingDiv.id = 'loading';
+            loadingDiv.innerHTML = '<div class="loading"><span></span><span></span><span></span></div>';
+            messagesContainer.appendChild(loadingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function removeLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) loading.remove();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const question = input.value.trim();
+            
+            if (!question) return;
+            
+            input.value = '';
+            addMessage(question, true);
+            addLoading();
+            
+            document.getElementById('send-btn').disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE}/ask`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+                
+                const data = await response.json();
+                removeLoading();
+                addMessage(data.answer, false);
+            } catch (error) {
+                removeLoading();
+                addMessage('Sorry, there was an error processing your request. Please try again.', false);
+            }
+            
+            document.getElementById('send-btn').disabled = false;
+        }
+
+        function askQuestion(question) {
+            document.getElementById('chat-input').value = question;
+            sendMessage();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Load metrics on page load
+        loadMetrics();
+    </script>
+</body>
+</html>
